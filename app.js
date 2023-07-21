@@ -23,7 +23,6 @@ async function getBalance(address) {
 }
 
 async function sendTrx(toAddress) {
-  console.log("31");
 
   // let receipt = await tronWeb.trx.sendTransaction(toAddress, 100, privateKey)
 
@@ -32,7 +31,7 @@ async function sendTrx(toAddress) {
     2 * 1000 * 1000,
     tronWeb.address.toHex(fromAddress)
   );
-  console.log("37");
+
   const signedtxn = await tronWeb.trx.sign(tradeobj, privateKey);
   const receipt = await tronWeb.trx.sendRawTransaction(signedtxn);
 
@@ -98,5 +97,7 @@ async function main() {
   //   // Simulate sending 50 USDT to another wallet (replace receiverAddress with the receiver's address)
   //   await sendUSDT(50, 'RECEIVER_ADDRESS');
 }
+
+// TFKbJHrhpX37ciT8vpL5TPV8inVKg8jtV9
 
 main();
