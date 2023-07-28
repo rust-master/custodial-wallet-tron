@@ -1,101 +1,97 @@
 const TronWeb = require("tronweb");
-require('dotenv').config();
+require("dotenv").config();
 
-const fullNode = "https://api.shasta.trongrid.io";
-const solidityNode = "https://api.shasta.trongrid.io";
-const eventServer = "https://api.shasta.trongrid.io";
-const fromAddress = "TV8GjTwz6i2QiA7rQqGoeih6vWcbhofBDd";
-const tronWeb = new TronWeb(fullNode, solidityNode, eventServer, process.env.PRIVATE_KEY);
+// Testnet: https://api.shasta.trongrid.io
+// Mainnet: https://api.trongrid.io
 
-// Replace with your TRC20 USDT contract address
-// const usdtContractAddress = 'TRC20_USDT_CONTRACT_ADDRESS';
+const fullNode = "https://api.trongrid.io";
+const solidityNode = "https://api.trongrid.io";
+const eventServer = "https://api.trongrid.io";
+const fromAddress = "https://api.trongrid.io";
+
+const CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+
+async function setupTron(privateKey) {
+  const tronWeb = new TronWeb(fullNode, solidityNode, eventServer, privateKey);
+
+  return tronWeb;
+}
 
 // Create a wallet
 async function createWallet() {
+  let tronWeb = await setupTron(process.env.PRIVATE_KEY);
   const account = await tronWeb.createAccount();
   return account;
 }
 
 // Get wallet balance
 async function getBalance(address) {
-  const balance = await tronWeb.trx.getBalance(address);
-  return balance;
+  let tronWeb = await setupTron(process.env.PRIVATE_KEY);
+  const { abi } = await tronWeb.trx.getContract(CONTRACT);
+  const contract = tronWeb.contract(abi.entrys, CONTRACT);
+
+  const balance = await contract.methods.balanceOf(address).call();
+  let bln = balance / 1000000;
+
+  return bln;
 }
 
-async function sendTrx(toAddress) {
+async function withdraw(address, amount) {
+  try {
+    let tronWeb = await setupTron(process.env.PI_KEY);
 
-  // let receipt = await tronWeb.trx.sendTransaction(toAddress, 100, privateKey)
+    const { abi } = await tronWeb.trx.getContract(CONTRACT);
+    const contract = tronWeb.contract(abi.entrys, CONTRACT);
 
-  const tradeobj = await tronWeb.transactionBuilder.sendTrx(
-    tronWeb.address.toHex(toAddress),
-    2 * 1000 * 1000,
-    tronWeb.address.toHex(fromAddress)
-  );
+    const resp = await contract.methods.transfer('TV8GjTwz6i2QiA7rQqGoeih6vWcbhofBDd', 3).send();
 
-  const signedtxn = await tronWeb.trx.sign(tradeobj, privateKey);
-  const receipt = await tronWeb.trx.sendRawTransaction(signedtxn);
-
-  return receipt;
+    return resp;
+  } catch (error) {
+    console.error("Error during withdraw:", error);
+    throw error; // Rethrow the error to be caught by the caller (if any).
+  }
 }
 
-// Receive USDT (called when a user sends USDT to the wallet address)
-// async function receiveUSDT(amount, senderAddress) {
-//     const contract = await tronWeb.contract().at(usdtContractAddress);
 
-//     // The contract's "transfer" function
-//     const transferFunction = 'transfer(address,uint256)';
+// async function sendTrx(toAddress) {
+//   const tradeobj = await tronWeb.transactionBuilder.sendTrx(
+//     tronWeb.address.toHex(toAddress),
+//     2 * 1000 * 1000,
+//     tronWeb.address.toHex(fromAddress)
+//   );
 
-//     // Convert the amount to the contract's format (multiply by 10^6 for 6 decimals)
-//     const amountInContractFormat = amount * 1e6;
+//   const signedtxn = await tronWeb.trx.sign(tradeobj, privateKey);
+//   const receipt = await tronWeb.trx.sendRawTransaction(signedtxn);
 
-//     try {
-//         // Transfer USDT to the wallet address
-//         await contract[transferFunction](tronWeb.address.toHex(senderAddress), amountInContractFormat).send();
-//         return true;
-//     } catch (error) {
-//         console.error('Error receiving USDT:', error);
-//         return false;
-//     }
-// }
-
-// Send USDT to a given address
-// async function sendUSDT(amount, receiverAddress) {
-//     const contract = await tronWeb.contract().at(usdtContractAddress);
-
-//     // The contract's "transfer" function
-//     const transferFunction = 'transfer(address,uint256)';
-
-//     // Convert the amount to the contract's format (multiply by 10^6 for 6 decimals)
-//     const amountInContractFormat = amount * 1e6;
-
-//     try {
-//         // Transfer USDT to the receiver address
-//         await contract[transferFunction](tronWeb.address.toHex(receiverAddress), amountInContractFormat).send();
-//         return true;
-//     } catch (error) {
-//         console.error('Error sending USDT:', error);
-//         return false;
-//     }
+//   return receipt;
 // }
 
 // Example usage:
 async function main() {
-  const wallet = await createWallet();
-  console.log("New Wallet Address:", wallet.address);
-  console.log("Address:", wallet.address.base58);
-  console.log("Private Key:", wallet.privateKey);
+  // const wallet = await createWallet();
+  // console.log("New Wallet Address:", wallet.address);
+  // console.log("Address:", wallet.address.base58);
+  // console.log("Private Key:", wallet.privateKey);
 
   // let receipt = await sendTrx(wallet.address.base58);
   // console.log('receipt', receipt);
 
-  // const balance = await getBalance(wallet.address.base58);
-  // console.log('Wallet Balance:', balance);
+  const balance = await getBalance("TFKbJHrhpX37ciT8vpL5TPV8inVKg8jtV9");
+  console.log("Wallet Balance:", balance);
 
-  //   // Simulate receiving 100 USDT from another wallet (replace senderAddress with the sender's address)
-  //   await receiveUSDT(100, 'SENDER_ADDRESS');
+  // let resp = await withdraw("TV8GjTwz6i2QiA7rQqGoeih6vWcbhofBDd", 8);
+  // console.log("transfer:", resp);
 
-  //   // Simulate sending 50 USDT to another wallet (replace receiverAddress with the receiver's address)
-  //   await sendUSDT(50, 'RECEIVER_ADDRESS');
+  withdraw('TV8GjTwz6i2QiA7rQqGoeih6vWcbhofBDd', 3)
+  .then(resp => {
+    console.log("Withdraw response:", resp);
+  })
+  .catch(error => {
+    console.error("Withdraw failed:", error);
+  });
+
+  const balancei = await getBalance("TV8GjTwz6i2QiA7rQqGoeih6vWcbhofBDd");
+  console.log("Wallet Balance:", balancei);
 }
 
 // TFKbJHrhpX37ciT8vpL5TPV8inVKg8jtV9
